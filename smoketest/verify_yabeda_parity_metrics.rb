@@ -1,12 +1,12 @@
 require_relative "metric_contract"
 require_relative "verify_support"
 
-expected_metrics = SmoketestMetricContract.expected_metrics
-expected_metric_counts = SmoketestMetricContract.expected_metric_counts
-expected_unique_metric_counts = SmoketestMetricContract.expected_unique_metric_counts
-expected_units = SmoketestMetricContract.expected_units
-expected_dimensions = SmoketestMetricContract.expected_dimensions
-allowed_value_kinds = SmoketestMetricContract.allowed_value_kinds
+expected_metrics = SmoketestMetricContract.expected_metrics.except("SolidQueue")
+expected_metric_counts = SmoketestMetricContract.expected_metric_counts.except("SolidQueue")
+expected_unique_metric_counts = SmoketestMetricContract.expected_unique_metric_counts.except("SolidQueue")
+expected_units = SmoketestMetricContract.expected_units.except("SolidQueue")
+expected_dimensions = SmoketestMetricContract.expected_dimensions.except("SolidQueue")
+allowed_value_kinds = SmoketestMetricContract.allowed_value_kinds.except("SolidQueue")
 expected_sample_totals = SmoketestMetricContract.expected_sample_totals
 
 verifier = VerifySupport.new(metrics_file: File.join(__dir__, "tmp", "captured_metrics.csv"))

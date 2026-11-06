@@ -4,7 +4,7 @@
   <img src="https://github.com/user-attachments/assets/146ce110-311a-4acb-8000-66cd098f8b45" alt="Sit around and watch the clouds all day...">
 </p>
 
-This gem helps integrate your Ruby application with AWS CloudWatch for the purposes of auto-scaling. There are integrations for **Puma**, **Rack**, **Sidekiq** and **ActiveJob**.
+This gem helps integrate your Ruby application with AWS CloudWatch for the purposes of auto-scaling. There are integrations for **Puma**, **Rack**, **Sidekiq**, **Solid Queue** and **ActiveJob**.
 
 This gem is for **infrastructure and queue metrics**, not application performance metrics, like response times, job execution times, or error rates. Use your APM for that stuff.
 
@@ -12,7 +12,7 @@ CloudWatch is unusually difficult to integrate with properly in Ruby, because th
 
 This library helps you avoid that latency by reporting to CloudWatch in a background thread.
 
-This library supports **Ruby 2.7+, Sidekiq 7+, and Puma 6+**.
+This library supports **Ruby 2.7+, Sidekiq 7+, Solid Queue 1.6+, and Puma 6+**.
 
 ## Metrics
 
@@ -23,6 +23,7 @@ By default, only essential queue metrics are enabled:
 ```ruby
 config.metrics[:puma] = [] # Disabled by default
 config.metrics[:sidekiq] = [:QueueLatency] # Per queue
+config.metrics[:solid_queue] = [:QueueLatency] # Per queue
 config.metrics[:rack] = [:RequestQueueTime]
 config.metrics[:active_job] = [:QueueLatency] # Per queue
 ```
@@ -40,6 +41,13 @@ config.metrics[:sidekiq] = [
   :EnqueuedJobs, :ProcessedJobs, :FailedJobs, :ScheduledJobs, :RetryJobs,
   :DeadJobs, :Workers, :Processes, :DefaultQueueLatency, :Capacity,
   :Utilization, :QueueLatency, :QueueSize
+]
+
+# Enable additional Solid Queue metrics
+config.metrics[:solid_queue] = [
+  :Processes, :Workers, :Capacity, :Utilization,
+  :QueueLatency, :QueueSize,
+  :ClaimedJobs
 ]
 ```
 
@@ -78,9 +86,13 @@ Speedshop::Cloudwatch.configure do |config|
   # Customize which Sidekiq queues to monitor (all queues by default)
   config.sidekiq_queues = ["critical", "default", "low_priority"]
 
+  # Customize which Solid Queue queues to monitor (all queues by default)
+  config.solid_queue_queues = ["critical", "default", "low_priority"]
+
   # Customize CloudWatch namespaces
   config.namespaces[:puma] = "MyApp/Puma"
   config.namespaces[:sidekiq] = "MyApp/Sidekiq"
+  config.namespaces[:solid_queue] = "MyApp/SolidQueue"
   config.namespaces[:rack] = "MyApp/Rack"
   config.namespaces[:active_job] = "MyApp/ActiveJob"
 
@@ -203,10 +215,40 @@ QueueSize - Size of each queue (Count) [per queue]
 Metrics marked [per queue] include a QueueName dimension.
 Utilization metrics include Tag and/or Hostname dimensions.
 
+## Solid Queue
+
+In Solid Queue dispatcher processes, this integration auto-registers lifecycle hooks. On dispatcher start, it adds the `:solid_queue` collector and starts the reporter. It requires Solid Queue 1.6 or newer.
+
+By default, only `QueueLatency` is reported. To enable additional metrics, configure them explicitly:
+
+```ruby
+Speedshop::Cloudwatch.configure do |config|
+  config.metrics[:solid_queue] = [
+    :Processes, :Workers, :Capacity, :Utilization,
+    :QueueLatency, :QueueSize,
+    :ClaimedJobs
+  ]
+end
+```
+
+We report the following metrics:
+
+```
+Processes - Number of live Solid Queue worker processes (Count)
+Workers - Number of worker threads processing jobs (Count)
+Capacity - Total worker threads across all processes (Count)
+Utilization - Average utilization across all processes (Percent)
+QueueLatency - Latency for each queue (Seconds) [per queue]
+QueueSize - Size of each queue (Count) [per queue]
+ClaimedJobs - Jobs being processed from each queue (Count) [per queue]
+```
+
+Metrics marked [per queue] include a QueueName dimension.
+
 ## ActiveJob
 
 > [!WARNING]
-> If you're using Sidekiq, just use that integration and do not include the ActiveJob module.
+> If you're using Sidekiq or Solid Queue, just use those integrations and do not include the ActiveJob module.
 
 In your ApplicationJob:
 
@@ -310,7 +352,7 @@ Speedshop::Cloudwatch.start!
 
 ## Disabling Automatic Integration
 
-You can disable the auto-integration of Sidekiq and Puma by not requiring them:
+You can disable the auto-integration of Sidekiq, Solid Queue and Puma by not requiring them:
 
 ```ruby
 gem 'speedshop-cloudwatch', require: false
@@ -323,6 +365,7 @@ require 'speedshop/cloudwatch/puma'
 require 'speedshop/cloudwatch/active_job'
 require 'speedshop/cloudwatch/rack'
 # require 'speedshop/cloudwatch/sidekiq'
+# require 'speedshop/cloudwatch/solid_queue'
 ```
 
 ## Bibliography

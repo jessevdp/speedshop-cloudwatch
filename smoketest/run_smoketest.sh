@@ -22,6 +22,9 @@ cleanup() {
   if [ ! -z "$SIDEKIQ_PID" ] && ps -p $SIDEKIQ_PID > /dev/null 2>&1; then
     kill $SIDEKIQ_PID 2>/dev/null && echo "✓ Sidekiq stopped"
   fi
+  if [ ! -z "$SOLID_QUEUE_PID" ] && ps -p $SOLID_QUEUE_PID > /dev/null 2>&1; then
+    kill $SOLID_QUEUE_PID 2>/dev/null && echo "✓ Solid Queue stopped"
+  fi
   if [ ! -z "$PUMA_PID" ] && ps -p $PUMA_PID > /dev/null 2>&1; then
     kill $PUMA_PID 2>/dev/null && echo "✓ Rails server stopped"
   fi
@@ -56,6 +59,8 @@ echo ""
 echo "Step 2: Installing dependencies..."
 bundle install --quiet
 echo "✓ Dependencies installed"
+bundle exec rake db:prepare > /dev/null
+echo "✓ Database prepared"
 echo ""
 
 echo "Step 3: Starting Rails server (Puma)..."
@@ -83,6 +88,18 @@ if ! ps -p $SIDEKIQ_PID > /dev/null; then
     exit 1
 fi
 echo "✓ Sidekiq started"
+echo ""
+
+echo "Step 4b: Starting Solid Queue..."
+SMOKETEST_PROCESS=solid_queue bin/jobs > log/solid_queue.log 2>&1 &
+SOLID_QUEUE_PID=$!
+sleep 5
+if ! ps -p $SOLID_QUEUE_PID > /dev/null; then
+    echo "❌ Failed to start Solid Queue"
+    cat log/solid_queue.log
+    exit 1
+fi
+echo "✓ Solid Queue started"
 echo ""
 
 echo "Step 5: Generating test traffic..."

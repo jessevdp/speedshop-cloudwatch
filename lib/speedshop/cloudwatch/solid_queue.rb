@@ -18,6 +18,23 @@ module Speedshop
         Speedshop::Cloudwatch.log_error("Failed to collect Solid Queue metrics: #{e.message}", e)
       end
 
+      class << self
+        def setup_lifecycle_hooks
+          ::SolidQueue.on_dispatcher_start do
+            Speedshop::Cloudwatch.configure { |c| c.collectors << :solid_queue }
+            Speedshop::Cloudwatch.start!
+          end
+
+          ::SolidQueue.on_dispatcher_stop do
+            Speedshop::Cloudwatch.stop!
+          end
+
+          ::SolidQueue.on_dispatcher_exit do
+            Speedshop::Cloudwatch.stop!
+          end
+        end
+      end
+
       private
 
       def metric_mapper
@@ -26,3 +43,5 @@ module Speedshop
     end
   end
 end
+
+ActiveSupport.on_load(:solid_queue) { Speedshop::Cloudwatch::SolidQueue.setup_lifecycle_hooks } if defined?(ActiveSupport)
