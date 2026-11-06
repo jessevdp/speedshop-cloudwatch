@@ -77,6 +77,24 @@ module Smoketest
             end
           end
         end
+
+        group :solid_queue do
+          gauge :processes, comment: "Live Solid Queue worker processes", unit: :count, aggregation: :most_recent
+          gauge :workers, comment: "Busy Solid Queue worker threads", unit: :count, aggregation: :most_recent
+          gauge :capacity, comment: "Total Solid Queue capacity", unit: :count, aggregation: :most_recent
+          gauge :utilization, comment: "Average Solid Queue utilization", unit: :percent, aggregation: :most_recent
+          gauge :queue_latency, comment: "Queue latency by queue", tags: %i[QueueName], unit: :seconds, aggregation: :most_recent
+          gauge :queue_size, comment: "Queue size by queue", tags: %i[QueueName], unit: :count, aggregation: :most_recent
+          gauge :claimed_jobs, comment: "Claimed jobs by queue", tags: %i[QueueName], unit: :count, aggregation: :most_recent
+
+          collect do
+            next unless Smoketest::YabedaParity.parity_process?("solid_queue")
+
+            Speedshop::Cloudwatch::Observations::SolidQueue.collect.each do |observation|
+              Smoketest::YabedaParity.report_solid_queue_observation(observation)
+            end
+          end
+        end
       end
     end
 
@@ -99,6 +117,11 @@ module Smoketest
 
     def report_sidekiq_observation(observation)
       metric = Yabeda.sidekiq.public_send(metric_method_name(observation[:metric]))
+      metric.set(observation[:dimensions] || {}, observation[:value])
+    end
+
+    def report_solid_queue_observation(observation)
+      metric = Yabeda.solid_queue.public_send(metric_method_name(observation[:metric]))
       metric.set(observation[:dimensions] || {}, observation[:value])
     end
 
