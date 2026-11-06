@@ -155,6 +155,57 @@ module Speedshop
         )
       ],
 
+      solid_queue: [
+        # Process-level metrics
+        Metric.new(
+          name: :Processes,
+          unit: "Count",
+          description: "Number of Solid Queue worker processes with a recent heartbeat.",
+          source: "SolidQueue::Process.where(kind: 'Worker') within SolidQueue.process_alive_threshold"
+        ),
+        Metric.new(
+          name: :Workers,
+          unit: "Count",
+          description: "Total number of worker threads currently processing jobs across all Solid Queue workers.",
+          source: "Sum of claimed executions across live worker processes"
+        ),
+        Metric.new(
+          name: :Capacity,
+          unit: "Count",
+          description: "Total number of worker threads available across all Solid Queue workers.",
+          source: "Sum of process.metadata['pool_size'] across live worker processes"
+        ),
+        Metric.new(
+          name: :Utilization,
+          unit: "Percent",
+          description: "Average percentage of worker threads currently busy. 100% " \
+                       "means all workers are busy.",
+          source: "Average of claimed executions / pool_size * 100 across live worker processes"
+        ),
+
+        # Queue-specific metrics
+        Metric.new(
+          name: :QueueLatency,
+          unit: "Seconds",
+          description: "Time the oldest job in this queue has been waiting. High " \
+                       "latency indicates jobs are backing up.",
+          source: "SolidQueue::Queue#latency"
+        ),
+        Metric.new(
+          name: :QueueSize,
+          unit: "Count",
+          description: "Number of jobs currently waiting in this queue. Growing " \
+                       "size indicates jobs arriving faster than processing.",
+          source: "SolidQueue::Queue#size"
+        ),
+        Metric.new(
+          name: :ClaimedJobs,
+          unit: "Count",
+          description: "Number of jobs from this queue currently being processed by a worker.",
+          source: "SolidQueue::ClaimedExecution count grouped by queue_name"
+        )
+      ],
+
       rack: [
         Metric.new(
           name: :RequestQueueTime,
