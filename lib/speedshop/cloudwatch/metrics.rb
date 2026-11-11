@@ -157,6 +157,31 @@ module Speedshop
 
       solid_queue: [
         Metric.new(
+          name: :Processes,
+          unit: "Count",
+          description: "Number of live Solid Queue worker processes for this supervisor.",
+          source: "Live worker processes for this supervisor"
+        ),
+        Metric.new(
+          name: :Workers,
+          unit: "Count",
+          description: "Number of worker threads currently processing jobs for this supervisor.",
+          source: "Sum of claimed executions across this supervisor's live worker processes"
+        ),
+        Metric.new(
+          name: :Capacity,
+          unit: "Count",
+          description: "Number of worker threads available across this supervisor's live workers.",
+          source: "Sum of process.metadata['pool_size'] across this supervisor's live worker processes"
+        ),
+        Metric.new(
+          name: :Utilization,
+          unit: "Percent",
+          description: "Average percentage of this supervisor's worker threads currently busy. 100% " \
+                       "means all workers are busy.",
+          source: "Average of claimed executions / pool_size * 100 across this supervisor's live worker processes"
+        ),
+        Metric.new(
           name: :QueueLatency,
           unit: "Seconds",
           description: "Time the oldest job in this queue has been waiting. High " \
