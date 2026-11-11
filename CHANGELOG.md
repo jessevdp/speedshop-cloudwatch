@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Added a Solid Queue integration that reports each supervisor's process metrics and global per-queue metrics from the dispatcher. Requires Solid Queue 1.6 or newer.
+
 ## [0.2.2] - 2026-09-07
 
 ### Changed

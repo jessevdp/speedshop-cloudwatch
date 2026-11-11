@@ -131,6 +131,8 @@ module Speedshop
         config.collectors.each do |integration|
           @collectors << Speedshop::Cloudwatch::Puma.new if integration == :puma
           @collectors << Speedshop::Cloudwatch::Sidekiq.new if integration == :sidekiq
+          @collectors << Speedshop::Cloudwatch::SolidQueueQueues.new if integration == :solid_queue_queues
+          @collectors << Speedshop::Cloudwatch::SolidQueueProcesses.new if integration == :solid_queue_processes
           @collectors << Speedshop::Cloudwatch::Yabeda::Collector.new if integration == :yabeda
         rescue => e
           Speedshop::Cloudwatch.log_error("Failed to initialize collector for #{integration}: #{e.message}", e)
