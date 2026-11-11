@@ -155,6 +155,23 @@ module Speedshop
         )
       ],
 
+      solid_queue: [
+        Metric.new(
+          name: :QueueLatency,
+          unit: "Seconds",
+          description: "Time the oldest job in this queue has been waiting. High " \
+                       "latency indicates jobs are backing up.",
+          source: "SolidQueue::Queue#latency"
+        ),
+        Metric.new(
+          name: :QueueSize,
+          unit: "Count",
+          description: "Number of jobs currently waiting in this queue. Growing " \
+                       "size indicates jobs arriving faster than processing.",
+          source: "SolidQueue::Queue#size"
+        )
+      ],
+
       rack: [
         Metric.new(
           name: :RequestQueueTime,
