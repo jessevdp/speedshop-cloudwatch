@@ -7,6 +7,16 @@ module Speedshop
     class SolidQueue
       class << self
         attr_accessor :supervisor
+
+        def setup_lifecycle_hooks
+          ::SolidQueue.on_start do |supervisor|
+            Speedshop::Cloudwatch::SolidQueue.supervisor = supervisor
+            Speedshop::Cloudwatch.configure { |c| c.collectors << :solid_queue }
+            Speedshop::Cloudwatch.start!
+          end
+
+          ::SolidQueue.on_exit { |supervisor| Speedshop::Cloudwatch.stop! if supervisor.standalone? }
+        end
       end
 
       def collect
@@ -35,3 +45,5 @@ module Speedshop
     end
   end
 end
+
+ActiveSupport.on_load(:solid_queue) { Speedshop::Cloudwatch::SolidQueue.setup_lifecycle_hooks } if defined?(ActiveSupport)

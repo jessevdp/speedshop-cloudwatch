@@ -16,10 +16,14 @@ jobs:
         include:
           - name: Full Integration Test
             script: ./run_smoketest.sh
+            solid_queue_supervisor_mode: fork
           - name: Yabeda Parity Integration Test
             script: ./run_yabeda_parity_smoketest.sh
           - name: Yabeda Stock Plugin Integration Test
             script: ./run_yabeda_stock_plugin_smoketest.sh
+          - name: Solid Queue Standalone Async Integration Test
+            script: ./run_smoketest.sh
+            solid_queue_supervisor_mode: async
 
     services:
       redis:
@@ -45,6 +49,8 @@ jobs:
           working-directory: smoketest
 
       - name: Run smoketest
+        env:
+          SOLID_QUEUE_SUPERVISOR_MODE: ${{ matrix.solid_queue_supervisor_mode }}
         run: |
           cd smoketest
           ${{ matrix.script }}
